@@ -42,3 +42,5 @@ app/dist/
 android/.build/
 android/assets/
 android/classes.dex
+# Chessi desktop build staging
+desktop/Chessi-1.0.0.AppDir/
