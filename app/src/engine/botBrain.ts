@@ -1,21 +1,17 @@
 /* Bot brain — enforces calibrated strength: UCI_LimitStrength / Skill Level /
-   depth caps / deliberate blunder injection / human-feeling think times. */
+   depth caps / deliberate blunder injection. INSTANT replies by design:
+   no artificial think delays — the engine answers on the next frame. */
 
 import { Chess } from 'chess.js';
 import type { BotDef } from '../data/bots';
 import { bootEngine, evaluatePosition, configureBotStrength, engineReady } from './index';
 import { simpleEvaluate } from './uci';
 
-const rand = (min: number, max: number) => min + Math.random() * (max - min);
-
-/** Returns the bot's move after a human-feeling delay. Never throws. */
+/** Returns the bot's move as fast as the local engine can produce it. Never throws. */
 export async function pickBotMove(fen: string, bot: BotDef): Promise<{ from: string; to: string; promotion?: string } | null> {
   const chess = new Chess(fen);
   const legal = chess.moves({ verbose: true }) as Array<{ from: string; to: string; promotion?: string }>;
   if (!legal.length) return null;
-
-  const delayMs = rand(bot.skill.thinkMs[0], bot.skill.thinkMs[1]);
-  const think = new Promise<void>((res) => setTimeout(res, delayMs));
 
   const hasSf = await bootEngine();
 
@@ -60,7 +56,6 @@ export async function pickBotMove(fen: string, bot: BotDef): Promise<{ from: str
     chosen = scored[pickIdx]?.m ?? scored[0].m;
   }
 
-  await think; // keep the human-feeling pacing even if search was instant
   return chosen;
 }
 

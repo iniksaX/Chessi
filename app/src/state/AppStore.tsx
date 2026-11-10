@@ -6,7 +6,7 @@ import {
   type UserAccount, type UserStats,
 } from '../storage';
 import { applyTheme, loadTheme, saveTheme, validateTheme, DEFAULT_THEME, type ChessiTheme } from './theme';
-import { setSoundEnabled, setSoundVolume } from '../audio';
+import { setSoundEnabled, setSoundVolume, primeAudio } from '../audio';
 
 export type Tab = 'play' | 'puzzles' | 'watch' | 'review' | 'profile';
 export type ActiveGame =
@@ -51,6 +51,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [reviewPgn, setReviewPgn] = useState<string | null>(null);
   const [reviewTitle, setReviewTitle] = useState<string | undefined>(undefined);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  // unlock the audio engine on the first user gesture, anywhere in the app
+  useEffect(() => {
+    const prime = () => primeAudio();
+    window.addEventListener('pointerdown', prime, { once: true });
+    window.addEventListener('keydown', prime, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', prime);
+      window.removeEventListener('keydown', prime);
+    };
+  }, []);
 
   useEffect(() => {
     const session = ChessiAuth.currentSession();

@@ -70,7 +70,7 @@ export function HomeScreen() {
           )}
         </button>
         <button className="icon-btn" style={{ padding: 0 }} aria-label="Profile" onClick={() => app.setTab('profile')}>
-          {account && <UserAvatar id={account.avatarId} size={38} />}
+          {account && <UserAvatar id={account.avatarId} size={38} src={account.customAvatar} />}
         </button>
       </div>
 

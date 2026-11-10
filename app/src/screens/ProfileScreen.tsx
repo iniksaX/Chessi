@@ -1,10 +1,102 @@
 /* Profile tab — identity, stats, achievements, theme JSON customizer, account. */
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../state/AppStore';
 import { TITLES } from '../data/titles';
-import { USER_AVATARS, UserAvatar } from '../components/bits';
+import { AccountTitlePill, USER_AVATARS, UserAvatar } from '../components/bits';
+import { ACHIEVEMENTS, ACHIEVEMENT_IDS, puzzleAccuracy } from '../achievements';
 import { DEFAULT_THEME } from '../state/theme';
+
+
+/* Circular avatar crop: drag to reposition, slider to zoom, 160px JPEG out. */
+function AvatarCropModal({ src, onDone, onCancel }: { src: string; onDone: (dataUrl: string) => void; onCancel: () => void }) {
+  const STAGE = 220;
+  const [base, setBase] = useState(1);
+  const [zoom, setZoom] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const imgRef = useRef<HTMLImageElement>(null);
+  const drag = useRef<{ px: number; py: number; ox: number; oy: number } | null>(null);
+
+  const clampOffset = (x: number, y: number, scale: number, natW: number, natH: number) => {
+    const maxX = Math.max(0, (natW * scale - STAGE) / 2);
+    const maxY = Math.max(0, (natH * scale - STAGE) / 2);
+    return { x: Math.min(maxX, Math.max(-maxX, x)), y: Math.min(maxY, Math.max(-maxY, y)) };
+  };
+
+  const onImgLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    const cover = Math.max(STAGE / img.naturalWidth, STAGE / img.naturalHeight);
+    setBase(cover);
+    setZoom(1);
+    setOffset({ x: 0, y: 0 });
+  };
+
+  const onPointerDown = (e: React.PointerEvent<HTMLImageElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    drag.current = { px: e.clientX, py: e.clientY, ox: offset.x, oy: offset.y };
+  };
+  const onPointerMove = (e: React.PointerEvent<HTMLImageElement>) => {
+    if (!drag.current || !imgRef.current) return;
+    const nat = imgRef.current;
+    const scale = base * zoom;
+    const next = clampOffset(
+      drag.current.ox + (e.clientX - drag.current.px),
+      drag.current.oy + (e.clientY - drag.current.py),
+      scale, nat.naturalWidth, nat.naturalHeight,
+    );
+    setOffset(next);
+  };
+  const onPointerUp = () => { drag.current = null; };
+
+  const save = () => {
+    const img = imgRef.current;
+    if (!img) return;
+    const scale = base * zoom;
+    const view = STAGE / scale;
+    const cx = img.naturalWidth / 2 - offset.x / scale;
+    const cy = img.naturalHeight / 2 - offset.y / scale;
+    const canvas = document.createElement('canvas');
+    canvas.width = 160; canvas.height = 160;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.drawImage(img, cx - view / 2, cy - view / 2, view, view, 0, 0, 160, 160);
+    onDone(canvas.toDataURL('image/jpeg', 0.86));
+  };
+
+  const scale = base * zoom;
+
+  return (
+    <div className="crop-backdrop" role="dialog" aria-modal="true" aria-label="Crop your profile photo">
+      <div className="crop-panel">
+        <div className="label" style={{ marginBottom: 2 }}>CROP PHOTO</div>
+        <p className="muted" style={{ fontSize: 11, margin: '2px 0 0' }}>Drag to reposition · slider to zoom</p>
+        <div className="crop-stage">
+          <img
+            ref={imgRef}
+            src={src}
+            alt="Avatar preview"
+            onLoad={onImgLoad}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerUp}
+            draggable={false}
+            style={{ transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px)) scale(${scale})` }}
+          />
+        </div>
+        <input className="crop-zoom" type="range" min={1} max={3} step={0.01} value={zoom} aria-label="Zoom" onChange={(e) => {
+          const z = Number(e.target.value);
+          setZoom(z);
+          if (imgRef.current) setOffset((o) => clampOffset(o.x, o.y, base * z, imgRef.current!.naturalWidth, imgRef.current!.naturalHeight));
+        }} />
+        <div className="crop-row">
+          <button className="btn ghost small block" onClick={onCancel}>Cancel</button>
+          <button className="btn small block" onClick={save}>Use photo</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function ProfileScreen() {
   const app = useApp();
@@ -16,6 +108,7 @@ export function ProfileScreen() {
   const [themeDraft, setThemeDraft] = useState(app.themeJson);
   const [themeErrors, setThemeErrors] = useState<string[]>([]);
   const [themeSaved, setThemeSaved] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
 
   const title = TITLES.find((t) => t.id === account?.titleId) ?? TITLES[0];
   const winRate = stats && stats.gamesPlayed > 0 ? Math.round((stats.wins / stats.gamesPlayed) * 100) : 0;
@@ -88,10 +181,13 @@ export function ProfileScreen() {
     <div className="screen screen-pad">
       {/* identity card */}
       <div className="card card-pad" style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 12 }}>
-        <UserAvatar id={account.avatarId} size={84} />
+        <UserAvatar id={account.avatarId} size={84} src={account.customAvatar} />
         <div style={{ minWidth: 0, flex: 1 }}>
           <div className="h1" style={{ fontSize: 20, lineHeight: 1.15 }}>{account.displayName}</div>
-          <div className="muted" style={{ fontSize: 12 }}>@{account.username}</div>
+          <div className="muted" style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <span>@{account.username}</span>
+            <AccountTitlePill account={account} small />
+          </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
             {title.id !== 'none' && <span className="title-pill" style={{ borderColor: title.hue, color: title.hue }}>{title.label}</span>}
             <span className="streak-flame">
@@ -185,10 +281,49 @@ export function ProfileScreen() {
         </>
       )}
 
-      {/* title + avatar */}
+      {/* achievement titles — earned by play, stored locally */}
+      <div className="label" style={{ margin: '2px 2px 6px' }}>ACHIEVEMENT TITLES</div>
+      <div className="title-cloud" style={{ marginBottom: 12 }}>
+        {ACHIEVEMENTS.map((a) => {
+          const t = TITLES.find((x) => x.id === a.titleId)!;
+          const prog = stats ? a.progress(stats) : { current: 0, target: 1 };
+          const un = stats ? a.unlocked(stats) : false;
+          const acc = stats ? puzzleAccuracy(stats) : null;
+          return (
+            <button
+              key={t.id}
+              className={`title-chip ${account.titleId === t.id ? 'selected' : ''} ${un ? '' : 'locked'}`}
+              style={un && account.titleId === t.id ? { borderColor: t.hue, color: t.hue } : un ? { borderColor: t.hue, color: t.hue } : undefined}
+              title={un ? t.blurb : `${t.blurb}${a.requirement ? ' · ' + a.requirement : ''}${acc !== null && a.titleId === 'tactician' ? ` (accuracy ${(acc * 100).toFixed(0)}%)` : ''}`}
+              disabled={!un}
+              aria-pressed={account.titleId === t.id}
+              onClick={() => {
+                if (!un) return;
+                app.updateAccount({ titleId: t.id });
+                app.toast(`Title set: ${t.label}`);
+              }}
+            >
+              {!un && (
+                <svg className="lock-ico" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              )}
+              <span>{t.label}</span>
+              {!un && <span className="achievement-progress">{prog.current}/{prog.target}</span>}
+            </button>
+          );
+        })}
+      </div>
+      {account.titleId !== 'none' && ACHIEVEMENT_IDS.has(account.titleId) && (
+        <p className="muted" style={{ fontSize: 11, margin: '-6px 2px 10px' }}>
+          Earned title — rendered next to your @username in matches and profile.
+        </p>
+      )}
+
+      {/* regular titles */}
       <div className="label" style={{ margin: '2px 2px 6px' }}>TITLE</div>
       <div className="title-cloud" style={{ marginBottom: 12 }}>
-        {TITLES.map((t) => (
+        {TITLES.filter((t) => !ACHIEVEMENT_IDS.has(t.id)).map((t) => (
           <button
             key={t.id}
             className={`title-chip ${account.titleId === t.id ? 'selected' : ''}`}
@@ -202,13 +337,38 @@ export function ProfileScreen() {
       </div>
 
       <div className="label" style={{ margin: '0 2px 6px' }}>AVATAR</div>
-      <div className="avatar-grid" style={{ marginBottom: 14 }}>
+      <div className="avatar-grid" style={{ marginBottom: account.customAvatar ? 6 : 14 }}>
+        <label className="avatar-upload" aria-label="Upload a photo from your gallery">
+          <input type="file" accept="image/*" onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (!file) return;
+            if (!/^image\//.test(file.type)) { app.toast('Please choose an image file'); return; }
+            const reader = new FileReader();
+            reader.onload = () => setCropSrc(String(reader.result ?? ''));
+            reader.readAsDataURL(file);
+          }} />
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M17 8l-5-5-5 5" /><path d="M12 3v12" /></svg>
+          <span style={{ fontSize: 9.5, fontWeight: 800, marginTop: 2 }}>UPLOAD</span>
+        </label>
         {USER_AVATARS.map((a) => (
-          <button key={a.id} className={`avatar-choice ${account.avatarId === a.id ? 'selected' : ''}`} aria-label={`Avatar ${a.id}`} aria-pressed={account.avatarId === a.id} onClick={() => app.updateAccount({ avatarId: a.id })}>
+          <button key={a.id} className={`avatar-choice ${account.avatarId === a.id && !account.customAvatar ? 'selected' : ''}`} aria-label={`Avatar ${a.id}`} aria-pressed={account.avatarId === a.id && !account.customAvatar} onClick={() => app.updateAccount({ avatarId: a.id, customAvatar: undefined })}>
             <UserAvatar id={a.id} size={44} />
           </button>
         ))}
       </div>
+      {account.customAvatar && (
+        <button className="btn ghost small" style={{ marginBottom: 14 }} onClick={() => { app.updateAccount({ customAvatar: undefined }); app.toast('Custom photo removed'); }}>
+          Remove custom photo
+        </button>
+      )}
+      {cropSrc && (
+        <AvatarCropModal
+          src={cropSrc}
+          onCancel={() => setCropSrc(null)}
+          onDone={(dataUrl) => { setCropSrc(null); app.updateAccount({ customAvatar: dataUrl }); app.toast('Avatar updated'); }}
+        />
+      )}
 
       {/* theme JSON customizer */}
       <div className="label" style={{ margin: '0 2px 6px' }}>APPEARANCE — THEME JSON</div>

@@ -1,6 +1,8 @@
 /* Small shared components. */
 import React from 'react';
 import { NeoPieceSvg, type NeoPiece, type PieceColor } from './Pieces';
+import { TITLES } from '../data/titles';
+import type { UserAccount } from '../storage';
 import { cpToWinPercent, mateToCp } from '../storage';
 
 /* ---------- EvalBar: white at the bottom ---------- */
@@ -66,9 +68,32 @@ export const USER_AVATARS: Array<{ id: string; hue: number; piece: NeoPiece }> =
   { id: 'a12', hue: 78, piece: 'p' },
 ];
 
-export function UserAvatar({ id, size = 46 }: { id: string; size?: number }) {
+export function UserAvatar({ id, size = 46, src }: { id: string; size?: number; src?: string | null }) {
   const a = USER_AVATARS.find((x) => x.id === id) ?? USER_AVATARS[0];
+  if (src) {
+    return (
+      <div
+        className="bot-avatar"
+        style={{ width: size, height: size, borderRadius: 9, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.14)' }}
+        aria-hidden="true"
+      >
+        <img className="custom-avatar-img" src={src} alt="" width={size} height={size} />
+      </div>
+    );
+  }
   return <BotAvatar hue={a.hue} piece={pieceName(a.piece)} size={size} />;
+}
+
+/** The selected account title rendered as a colored pill, or null when 'none'. */
+export function AccountTitlePill({ account, small = false }: { account: UserAccount | null; small?: boolean }) {
+  if (!account) return null;
+  const t = TITLES.find((x) => x.id === account.titleId);
+  if (!t || t.id === 'none') return null;
+  return (
+    <span className={`title-pill${small ? ' sm' : ''}`} style={{ borderColor: t.hue, color: t.hue }}>
+      {t.label}
+    </span>
+  );
 }
 function pieceName(p: NeoPiece): string {
   return { p: 'pawn', n: 'knight', b: 'bishop', r: 'rook', q: 'queen', k: 'king' }[p];

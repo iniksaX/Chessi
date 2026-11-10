@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
 import { playSound } from '../audio';
 import { useApp } from '../state/AppStore';
-import { eloDelta, type GameCategory, type GameRecord } from '../storage';
+import { eloDelta, type GameCategory, type GameRecord, type UserStats } from '../storage';
+import { newlyUnlocked } from '../achievements';
 
 export interface GameConfig {
   kind: 'computer' | 'passplay';
@@ -31,7 +32,7 @@ function categoryFor(base: number): GameCategory {
 }
 
 export function useGame(config: GameConfig) {
-  const { updateStats, account } = useApp();
+  const { updateStats, account, toast } = useApp();
   const [chess] = useState(() => {
     const c = new Chess();
     c.header('Event', config.pgnTagEvent, 'Site', 'Chessi (offline)', 'Date', new Date().toISOString().slice(0, 10));
@@ -48,6 +49,9 @@ export function useGame(config: GameConfig) {
   const startTimeRef = useRef(Date.now());
   const endRecordedRef = useRef(false);
   const lastTickRef = useRef(Date.now());
+
+  const clocksRef = useRef({ w: config.timeBase, b: config.timeBase });
+  useEffect(() => { clocksRef.current = clocks; }, [clocks]);
 
   const sideToMove = chess.turn();
 
@@ -79,6 +83,7 @@ export function useGame(config: GameConfig) {
     if (config.rated && config.opponentElo !== null && account) {
       const cat: GameCategory = categoryFor(config.timeBase);
       const score = result === 'win' ? 1 : result === 'draw' ? 0.5 : 0;
+      let unlockedNow: string[] = [];
       updateStats((s) => {
         const cur = s.ratings[cat].rating;
         const delta = eloDelta(cur, config.opponentElo!, score as 1 | 0.5 | 0);
@@ -92,6 +97,12 @@ export function useGame(config: GameConfig) {
         const draws = s.draws + (result === 'draw' ? 1 : 0);
         const currentStreak = result === 'win' ? s.currentStreak + 1 : result === 'loss' ? 0 : s.currentStreak;
         const bestStreak = Math.max(s.bestStreak, currentStreak);
+        // [WNM] — wins in a row vs 1500+ Elo bots
+        let highEloWinStreak = s.highEloWinStreak;
+        if (config.opponentElo! >= 1500) {
+          highEloWinStreak = result === 'win' ? s.highEloWinStreak + 1 : 0;
+        }
+        const bestHighEloWinStreak = Math.max(s.bestHighEloWinStreak, highEloWinStreak);
         const rec: GameRecord = {
           id: `g_${Date.now().toString(36)}`,
           date: Date.now(),
@@ -106,7 +117,7 @@ export function useGame(config: GameConfig) {
           flagged: false,
         };
         const history = [rec, ...s.history].slice(0, 100);
-        return {
+        const next = {
           ...s,
           ratings: {
             ...s.ratings,
@@ -116,12 +127,35 @@ export function useGame(config: GameConfig) {
           gamesPlayed: s.gamesPlayed + 1,
           wins, losses, draws,
           currentStreak, bestStreak,
+          highEloWinStreak, bestHighEloWinStreak,
           bestBotEloBeaten: result === 'win' ? Math.max(s.bestBotEloBeaten, config.opponentElo!) : s.bestBotEloBeaten,
           history,
         };
+        unlockedNow = newlyUnlocked(s, next as UserStats).map((a) => a.titleId);
+        return next as UserStats;
       });
+      for (const id of unlockedNow) {
+        toast(id === 'wnm' ? '🏅 Title unlocked: [WNM] — 5 wins in a row vs 1500+ Elo' : `🏅 Title unlocked: ${id}`);
+      }
     }
-  }, [chess, config, account, updateStats]);
+
+    // [BLITZER] — any win with <5s on the clock (rated or not, any clock)
+    if (result === 'win' && config.timeBase > 0 && account) {
+      const myColor = config.playerColor;
+      const left = clocksRef.current[myColor];
+      if (left < 5) {
+        let unlockedNow: string[] = [];
+        updateStats((s) => {
+          const next = { ...s, clutchLowTimeWins: s.clutchLowTimeWins + 1 };
+          unlockedNow = newlyUnlocked(s, next).map((a) => a.titleId);
+          return next;
+        });
+        if (unlockedNow.includes('blitzer')) {
+          toast('🏅 Title unlocked: [BLITZER] — won with <5s on the clock');
+        }
+      }
+    }
+  }, [chess, config, account, updateStats, toast]);
 
   const applyMove = useCallback((from: string, to: string, promotion?: 'q' | 'r' | 'b' | 'n'): boolean => {
     if (status !== 'playing') return false;

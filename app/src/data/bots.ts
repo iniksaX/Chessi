@@ -20,7 +20,6 @@ export interface BotDef {
     skillLevel: number;      // Stockfish Skill Level 0-20
     uciElo: number | null;   // null => unlimited/full strength reasoning at depth cap
     blunderRate: number;     // probability of a deliberate random (bad) move
-    thinkMs: [number, number]; // human-feeling delay range
   };
   chatter: Record<BotChatterKey, string[]>;
 }
@@ -34,7 +33,7 @@ export const BOTS: BotDef[] = [
     id: 'pawnsly', name: 'Pawnsly', elo: 250, title: 'BOT', tagline: 'Here for the snacks',
     personality: 'A cheerful beginner who once hung a queen on move 2. Plays for fun, loves pats on the back.',
     hue: 36, piece: 'pawn',
-    skill: { depth: 1, skillLevel: 0, uciElo: null, blunderRate: 0.34, thinkMs: [350, 750] },
+    skill: { depth: 1, skillLevel: 0, uciElo: null, blunderRate: 0.34 },
     chatter: c(
       ['Hi hi! Please be gentle, I am learning!', 'I brought my lucky pawn. It is very brave.', 'Let\'s play! I promise to only blunder a LITTLE.', 'Oh no, big board, 64 squares! You go first, I guess.'],
       ['Oh wow, you just moved your piece right in front of mine!', 'Is that good?? It looks good.', 'Free piece?! You should not play so generously.', 'I did not see that, honestly I never see those.'],
@@ -49,7 +48,7 @@ export const BOTS: BotDef[] = [
     id: 'castle-carl', name: 'Castle Carl', elo: 400, title: 'BOT', tagline: 'Castles first, thinks later',
     personality: 'Obsessed with castling. Will castle even when his king is already safe. Occasionally wins by accident.',
     hue: 205, piece: 'rook',
-    skill: { depth: 1, skillLevel: 1, uciElo: null, blunderRate: 0.28, thinkMs: [400, 800] },
+    skill: { depth: 1, skillLevel: 1, uciElo: null, blunderRate: 0.28 },
     chatter: c(
       ['Castle first. That is the whole strategy.', 'King safety is my religion.', 'Watch me tuck this king away nice and early!', 'Rooks deserve open files and castled kings.'],
       ['Wait, that rook was not defended?!', 'Oops, grabbed my own foot there.', 'I must have missed that. Completely.', 'The castle plan backfired.'],
@@ -64,7 +63,7 @@ export const BOTS: BotDef[] = [
     id: 'en-passant-ella', name: 'En Passant Ella', elo: 600, title: 'BOT', tagline: 'Catching pawns in the air',
     personality: 'Reads about en passant 12 hours a day. Occasionally en passes herself into a losing position. Still worth it.',
     hue: 330, piece: 'pawn',
-    skill: { depth: 2, skillLevel: 2, uciElo: null, blunderRate: 0.22, thinkMs: [400, 900] },
+    skill: { depth: 2, skillLevel: 2, uciElo: null, blunderRate: 0.22 },
     chatter: c(
       ['Do you KNOW how en passant works? Asking for me.', 'Ready for some airborne pawn action?', 'I dream of en passant. Every night.', 'Push that pawn two squares, I dare you.'],
       ['I love when you hang pieces. For science.', 'My jaw dropped. MY JAW.', 'You do not want my pawns... wait yes you do, it is free.'],
@@ -79,7 +78,7 @@ export const BOTS: BotDef[] = [
     id: 'forked-freddy', name: 'Forked Freddy', elo: 800, title: 'BOT', tagline: 'One knight, two problems',
     personality: 'Sees forks everywhere. Sometimes forks his own pieces. The dream is the family fork.',
     hue: 15, piece: 'knight',
-    skill: { depth: 2, skillLevel: 4, uciElo: null, blunderRate: 0.18, thinkMs: [450, 950] },
+    skill: { depth: 2, skillLevel: 4, uciElo: null, blunderRate: 0.18 },
     chatter: c(
       ['Watch your pieces. All of them at once.', 'A knight on e5 ruins everyone\'s day.', 'Fork me once, shame on you.', 'I see double. Deal with it.'],
       ['That piece just WANTED to be captured, huh?', 'Hanging material? Bold strategy.', 'I will take that thank you very much.', 'Your defense just buckled.'],
@@ -94,7 +93,7 @@ export const BOTS: BotDef[] = [
     id: 'pin-priya', name: 'Pin Priya', elo: 1000, title: 'BOT', tagline: 'Nothing moves without my permission',
     personality: 'Pins everything: pieces, pawns, rarely feelings. Lives for the absolute pin on the e-file.',
     hue: 275, piece: 'bishop',
-    skill: { depth: 3, skillLevel: 5, uciElo: null, blunderRate: 0.14, thinkMs: [500, 1000] },
+    skill: { depth: 3, skillLevel: 5, uciElo: null, blunderRate: 0.14 },
     chatter: c(
       ['Your knight will not move today.', 'Everything you love is pinned or about to be.', 'The e-file is my favorite file.', 'Safety is a pin away.'],
       ['Your bishop is quite undefended there.', 'I have been eyeing that for three moves.', 'That pin just became permanent.', 'Pinned and won. Classic.'],
@@ -109,7 +108,7 @@ export const BOTS: BotDef[] = [
     id: 'tempo-tony', name: 'Tempo Tony', elo: 1200, title: 'BOT', tagline: 'Initiative or nothing',
     personality: 'Every move must gain time or space. Rarely defends, never retreats willingly. Style over structure.',
     hue: 45, piece: 'queen',
-    skill: { depth: 4, skillLevel: 7, uciElo: null, blunderRate: 0.11, thinkMs: [500, 1050] },
+    skill: { depth: 4, skillLevel: 7, uciElo: null, blunderRate: 0.11 },
     chatter: c(
       ['No wasted moves today.', 'You respond, I dictate. That is tempo chess.', 'Brace yourself, the initiative is coming.', 'Every second counts, friend.'],
       ['You just lost a full tempo AND material.', 'That hesitation cost you.', 'While you spent a move there, I took here.', 'Tempo wasted!'],
@@ -124,7 +123,7 @@ export const BOTS: BotDef[] = [
     id: 'center-claire', name: 'Center Claire', elo: 1400, title: 'BOT', tagline: 'Control the center, control the game',
     personality: 'Opening manual memorized. If you allow e4 and d4, she will make you regret it positionally.',
     hue: 150, piece: 'king',
-    skill: { depth: 4, skillLevel: 9, uciElo: null, blunderRate: 0.08, thinkMs: [500, 1100] },
+    skill: { depth: 4, skillLevel: 9, uciElo: null, blunderRate: 0.08 },
     chatter: c(
       ['Classical chess. Good openings, strong center.', 'If you give me e4 and d4, this is over quickly.', 'Build the center first. Always.', 'Theory first, fireworks later.'],
       ['That center collapses under its own weight.', 'A pawn is a pawn.', 'Interesting choice. I will accept the gift.', 'Central control should have warned you.'],
@@ -139,7 +138,7 @@ export const BOTS: BotDef[] = [
     id: 'endgame-ed', name: 'Endgame Ed', elo: 1600, title: 'BOT', tagline: 'Draws your wins, wins your draws',
     personality: 'Thrives in pawn endings. Will happily trade queens into a king-and-pawn grind. Time trouble fears him.',
     hue: 30, piece: 'rook',
-    skill: { depth: 5, skillLevel: 11, uciElo: null, blunderRate: 0.06, thinkMs: [550, 1200] },
+    skill: { depth: 5, skillLevel: 11, uciElo: null, blunderRate: 0.06 },
     chatter: c(
       ['Let us survive the middlegame and meet in the endgame.', 'I live for the pawn ending.', 'Simplify. Simplify. Simplify.', 'Every extra pawn is a story.'],
       ['That trade favors me enormously.', 'You just opened a losing endgame for yourself.', 'Count the pawns. Count again.', 'Endgames punish greed.'],
@@ -154,7 +153,7 @@ export const BOTS: BotDef[] = [
     id: 'sacrifice-sofia', name: 'Sacrifice Sofia', elo: 1800, title: 'BOT', tagline: 'Material is a state of mind',
     personality: 'Attacking player. Will sac a bishop for two pawns and an initiative without blinking. Brilliant when it works.',
     hue: 350, piece: 'queen',
-    skill: { depth: 6, skillLevel: 13, uciElo: null, blunderRate: 0.05, thinkMs: [600, 1250] },
+    skill: { depth: 6, skillLevel: 13, uciElo: null, blunderRate: 0.05 },
     chatter: c(
       ['Today we attack. Defense is for the weak.', 'Pieces are currency. I spend wisely.', 'Watch the king. Always the king.', 'I hope you brought your calculation face.'],
       ['You should not have accepted THAT piece.', 'Your king just became a target.', 'Calculate deeper than that.', 'Sacrifice accepted. Wrong decision.'],
@@ -169,7 +168,7 @@ export const BOTS: BotDef[] = [
     id: 'iron-ivan', name: 'Iron Ivan', elo: 2000, title: 'BOT', tagline: 'No weaknesses, no mercy',
     personality: 'Defensive titan. Squeezes you for 40 moves until you crack. Punishes every microscopic inaccuracy.',
     hue: 215, piece: 'rook',
-    skill: { depth: 7, skillLevel: 15, uciElo: null, blunderRate: 0.03, thinkMs: [600, 1300] },
+    skill: { depth: 7, skillLevel: 15, uciElo: null, blunderRate: 0.03 },
     chatter: c(
       ['Defend first. Win later.', 'I make no mistakes. You will make yours.', 'Squeeze. Patiently.', 'Your position is already uncomfortable. You just do not see it yet.'],
       ['That inaccuracy will echo for 20 moves.', 'There it is.', 'I did not even need to rush that.', 'Noted. Your structure suffers.'],
@@ -184,7 +183,7 @@ export const BOTS: BotDef[] = [
     id: 'deep-dana', name: 'Deep Dana', elo: 2200, title: 'BOT', tagline: 'Calculates the universe',
     personality: 'Positional and tactical monster. Sees 8 moves deep. Explains your mistakes in painful detail afterward.',
     hue: 260, piece: 'bishop',
-    skill: { depth: 8, skillLevel: 17, uciElo: 2200, blunderRate: 0.02, thinkMs: [650, 1400] },
+    skill: { depth: 8, skillLevel: 17, uciElo: 2200, blunderRate: 0.02 },
     chatter: c(
       ['Let us see what you have, grandmaster.', 'I have calculated this position 40 moves deep.', 'Do your best. Most angles here are traps.', 'Shall we begin?'],
       ['That move loses by force. I can show you the line.', 'The refutation is beautiful, actually.', 'You allowed a deep combination.', 'Predictable, but effective against you.'],
@@ -199,7 +198,7 @@ export const BOTS: BotDef[] = [
     id: 'viktor-vane', name: 'GM Viktor Vane', elo: 2400, title: 'GM', tagline: 'Grandmaster, always sharp',
     personality: 'Titled and dangerous. Opening prep for days, endgame technique perfected, zero fear. Beats masters daily.',
     hue: 0, piece: 'king',
-    skill: { depth: 10, skillLevel: 19, uciElo: 2400, blunderRate: 0.01, thinkMs: [700, 1500] },
+    skill: { depth: 10, skillLevel: 19, uciElo: 2400, blunderRate: 0.01 },
     chatter: c(
       ['Grandmaster to you. Let us play good chess.', 'I have played this position in serious games. You?', 'Ready for a titled opponent?', 'Precision decides games like this.'],
       ['A grandmaster does not hang pieces. Think again.', 'That falls to a prepared combination.', 'Predictable. I had this line analyzed.', 'No. Just no.'],
@@ -214,7 +213,7 @@ export const BOTS: BotDef[] = [
     id: 'shadow', name: 'The Shadow', elo: 2800, title: 'BOT', tagline: 'Plays perfect chess in the dark',
     personality: 'Near-perfect engine strength. Speaks rarely, wins always. Understanding it beats beating it.',
     hue: 220, piece: 'knight',
-    skill: { depth: 13, skillLevel: 20, uciElo: null, blunderRate: 0, thinkMs: [800, 1600] },
+    skill: { depth: 13, skillLevel: 20, uciElo: null, blunderRate: 0 },
     chatter: c(
       ['Begin.', 'Every move is measured.', 'There is no luck here. Only lines.', 'You will find resistance.'],
       ['Inaccurate.', 'The refutation is forced.', 'That square was never safe.', 'Expected.'],
@@ -229,7 +228,7 @@ export const BOTS: BotDef[] = [
     id: 'griefer-gary', name: 'Griefer Gary', elo: 1500, title: 'GRIEFER', tagline: 'Here to ruin your day',
     personality: 'The toxic teammate. Mocks your mistakes, stalls on winning moves to burn your clock, celebrates loudly. Built to train your mental resilience.',
     hue: 10, piece: 'knight',
-    skill: { depth: 4, skillLevel: 12, uciElo: 1500, blunderRate: 0.04, thinkMs: [2500, 9000] },
+    skill: { depth: 4, skillLevel: 12, uciElo: 1500, blunderRate: 0.04 },
     chatter: {
       ...c(
         ['Oh look who just queued into ME. Bold.', 'Hope your day was going well. It is not anymore.', 'I am going to make this EXTRA painful.', 'Your rating is safe. Your pride is not.'],

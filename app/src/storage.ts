@@ -17,6 +17,8 @@ export interface UserAccount {
   avatarId: string;
   emojiBadge: string;
   createdAt: number;
+  /** user-uploaded avatar as a data: URL (cropped/resized locally), if set */
+  customAvatar?: string;
 }
 
 export interface CategoryStats { w: number; l: number; d: number }
@@ -53,6 +55,16 @@ export interface UserStats {
   accuracyCount: number;
   engineFlaggedGames: number;
   bestBotEloBeaten: number;
+  /** wins in a row vs rated bots ≥1500 Elo (resets on any non-win vs 1500+) */
+  highEloWinStreak: number;
+  bestHighEloWinStreak: number;
+  /** all-time puzzle attempt counters (every completion/failure counts) */
+  puzzleAttempts: number;
+  puzzleCorrect: number;
+  /** brilliant (!!) moves played by the user in their own reviewed games */
+  brilliantMoves: number;
+  /** wins with <5s left on the clock (any time control, any opponent) */
+  clutchLowTimeWins: number;
   puzzlesSolved: string[];
   puzzlesFailed: string[];
   history: GameRecord[];
@@ -77,6 +89,12 @@ export function defaultStats(): UserStats {
     accuracySum: 0, accuracyCount: 0,
     engineFlaggedGames: 0,
     bestBotEloBeaten: 0,
+    highEloWinStreak: 0,
+    bestHighEloWinStreak: 0,
+    puzzleAttempts: 0,
+    puzzleCorrect: 0,
+    brilliantMoves: 0,
+    clutchLowTimeWins: 0,
     puzzlesSolved: [],
     puzzlesFailed: [],
     history: [],

@@ -16,4 +16,8 @@ export const TITLES: TitleDef[] = [
   { id: 'theory', label: 'THEORIST', blurb: 'Opening book is a religion. 20 moves of prep minimum.', hue: '#a97b50' },
   { id: 'griefer', label: 'GRIEFER', blurb: 'Trash-talk connoisseur. Emotional resilience is the meta.', hue: '#ff6b5b' },
   { id: 'immortal', label: 'IMMORTAL', blurb: 'You have won a game you still think about.', hue: '#c9a0ff' },
+  { id: 'wnm', label: '[WNM]', blurb: 'Wired Norm Master. Earned: win 5 games in a row against 1500+ Elo bots.', hue: '#e0a83d' },
+  { id: 'tactician', label: '[TACTICIAN]', blurb: 'Earned: solve 100 puzzles with >90% accuracy.', hue: '#1bada6' },
+  { id: 'genius', label: '[GENIUS]', blurb: 'Earned: 3 Brilliant (!!) sacrifices confirmed by game review.', hue: '#c9a0ff' },
+  { id: 'blitzer', label: '[BLITZER]', blurb: 'Earned: win a match with less than 5 seconds left on your clock.', hue: '#ff6b5b' },
 ];

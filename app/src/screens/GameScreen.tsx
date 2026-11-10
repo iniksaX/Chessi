@@ -6,7 +6,7 @@ import { useGame } from '../hooks/useGame';
 import { botById, type BotDef } from '../data/bots';
 import { pickBotMove } from '../engine/botBrain';
 import { Board, capturedPieces } from '../components/Board';
-import { BotAvatar, CapturedTray, EvalBar, UserAvatar } from '../components/bits';
+import { AccountTitlePill, BotAvatar, CapturedTray, EvalBar, UserAvatar } from '../components/bits';
 import { findHangingPiece } from '../engine/review';
 import { evaluatePosition, bootEngine } from '../engine';
 import { playSound } from '../audio';
@@ -181,10 +181,13 @@ function GameSession({ onRematch }: { onRematch: () => void }) {
           ? <BotAvatar hue={bot!.hue} piece={bot!.piece} size={38} />
           : isComputer
             ? <BotAvatar hue={210} piece="queen" size={38} />
-            : <div className="avatar" style={{ width: 38, height: 38, borderRadius: 6, background: '#3a3835', display: 'grid', placeItems: 'center', fontWeight: 800 }}>{topName.charAt(0).toUpperCase()}</div>}
+            : account && orientation !== playerColor
+              ? <UserAvatar id={account.avatarId} size={38} src={account.customAvatar} />
+              : <div className="avatar" style={{ width: 38, height: 38, borderRadius: 6, background: '#3a3835', display: 'grid', placeItems: 'center', fontWeight: 800 }}>{topName.charAt(0).toUpperCase()}</div>}
         <div style={{ minWidth: 0 }}>
           <div className="name-line">
             <span className="pname">{topName}</span>
+            {!topIsBot && account && orientation !== playerColor && <AccountTitlePill account={account} small />}
             {topElo !== null && <span className="elo-pill">{topElo}</span>}
             {botThinking && topIsBot && <span className="thinking-dots"><span /><span /><span /></span>}
           </div>
@@ -232,12 +235,13 @@ function GameSession({ onRematch }: { onRematch: () => void }) {
       <div className="player-strip" style={{ paddingLeft: 10, paddingRight: 10 }}>
         {
           account
-            ? <UserAvatar id={account.avatarId} size={38} />
+            ? <UserAvatar id={account.avatarId} size={38} src={account.customAvatar} />
             : <div className="avatar" style={{ width: 38, height: 38, borderRadius: 6, background: '#3a3835' }} />
         }
         <div style={{ minWidth: 0 }}>
           <div className="name-line">
             <span className="pname">{bottomName}</span>
+            {account && orientation === playerColor && <AccountTitlePill account={account} small />}
             {isComputer && <span className="elo-pill" style={{ color: '#81b64c' }}>You</span>}
           </div>
           <CapturedTray pieces={myPiecesLost} material={Math.max(0, myMaterial)} color={orientation} />

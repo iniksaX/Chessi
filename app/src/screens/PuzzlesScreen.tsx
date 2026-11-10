@@ -6,6 +6,7 @@ import { useApp } from '../state/AppStore';
 import { PUZZLES, PUZZLE_THEMES, type Puzzle } from '../data/puzzles';
 import { Board } from '../components/Board';
 import { expectedScore } from '../storage';
+import { newlyUnlocked } from '../achievements';
 import { playSound } from '../audio';
 
 export function PuzzlesScreen() {
@@ -96,6 +97,7 @@ function PuzzleSession({ puzzle, onClose }: { puzzle: Puzzle; onClose: () => voi
   const orientation = chess.turn(); // player always moves the side to move at start
 
   const recordResult = (success: boolean) => {
+    let unlockedNow: string[] = [];
     app.updateStats((s) => {
       const score = success ? 1 : 0;
       const exp = expectedScore(s.ratings.puzzle.rating, puzzle.rating);
@@ -109,15 +111,22 @@ function PuzzleSession({ puzzle, onClose }: { puzzle: Puzzle; onClose: () => voi
         ? s.puzzlesFailed.filter((id) => id !== puzzle.id)
         : Array.from(new Set([...s.puzzlesFailed, puzzle.id]));
       const currentPuzzleStreak = success ? s.currentPuzzleStreak + 1 : 0;
-      return {
+      const next = {
         ...s,
         ratings: { ...s.ratings, puzzle: { rating: newRating, peak: Math.max(s.ratings.puzzle.peak, newRating) } },
         puzzlesSolved,
         puzzlesFailed,
         currentPuzzleStreak,
         bestPuzzleStreak: Math.max(s.bestPuzzleStreak, currentPuzzleStreak),
+        puzzleAttempts: s.puzzleAttempts + 1,
+        puzzleCorrect: s.puzzleCorrect + (success ? 1 : 0),
       };
+      unlockedNow = newlyUnlocked(s, next).map((a) => a.titleId);
+      return next;
     });
+    if (unlockedNow.includes('tactician')) {
+      app.toast('🏅 Title unlocked: [TACTICIAN] — 100 puzzles solved with >90% accuracy');
+    }
   };
 
   const finishSolved = () => {

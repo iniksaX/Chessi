@@ -10,6 +10,7 @@ import { matchOpening } from '../data/openings';
 import { EvalBar, EvalGraph } from '../components/bits';
 import { Board } from '../components/Board';
 import { playSound } from '../audio';
+import { newlyUnlocked } from '../achievements';
 
 const REVIEW_DEPTHS = [
   { depth: 10, label: 'Fast', sub: 'depth 10 · seconds' },
@@ -65,6 +66,7 @@ export function ReviewScreen() {
 
       // stats integration only for games from the user's own history (once per game).
       // Pasted third-party PGNs (e.g. famous games) are analyzed but never touch stats.
+      let unlockedNow: string[] = [];
       app.updateStats((s) => {
         const rec = s.history.find((r) => r.pgn === pgn && r.myAccuracy === null);
         if (!rec) {
@@ -73,7 +75,9 @@ export function ReviewScreen() {
         const ourColor = rec.myColor;
         const ourAcc = result.accuracy[ourColor];
         const suspected = result.suspectedEngine === ourColor;
-        return {
+        // [GENIUS] — brilliant (!!) sacrifices played by the user, engine-confirmed
+        const brilliants = result.moves.filter((m) => m.cls === 'brilliant' && m.color === ourColor).length;
+        const next = {
           ...s,
           history: s.history.map((r) =>
             r.pgn === pgn && r.myAccuracy === null
@@ -84,8 +88,14 @@ export function ReviewScreen() {
           accuracyCount: s.accuracyCount + 1,
           engineFlaggedGames: s.engineFlaggedGames + (suspected ? 1 : 0),
           totalReviews: s.totalReviews + 1,
+          brilliantMoves: s.brilliantMoves + brilliants,
         };
+        unlockedNow = newlyUnlocked(s, next).map((a) => a.titleId);
+        return next;
       });
+      if (unlockedNow.includes('genius')) {
+        app.toast('🏅 Title unlocked: [GENIUS] — 3 brilliant sacrifices confirmed by review');
+      }
     } catch (e) {
       if (!mountedRef.current) return;
       setError(e instanceof Error ? e.message : 'Could not parse/analyze that PGN.');

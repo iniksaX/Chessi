@@ -66,16 +66,21 @@ export function playSound(name: SoundName) {
   if (!enabled) return;
   switch (name) {
     case 'move':
-      noiseBurst(0.002, 0.09, 0.7, 900, 0, 1.6);
-      tone(320, 'triangle', 0.002, 0.07, 0.35);
+      // soft wood tap — short bandpassed knock + warm body thump
+      noiseBurst(0.0015, 0.075, 0.8, 1050, 0, 2.2);
+      tone(300, 'triangle', 0.002, 0.065, 0.38);
+      tone(150, 'sine', 0.002, 0.09, 0.3);
       break;
     case 'capture':
-      noiseBurst(0.002, 0.13, 0.9, 600, 0, 1.2);
-      tone(180, 'square', 0.002, 0.1, 0.3);
+      // sharp snapping capture — crack layer on top of the move knock
+      noiseBurst(0.001, 0.11, 1.0, 750, 0, 1.6);
+      noiseBurst(0.001, 0.045, 0.75, 2400, 0, 3.2);
+      tone(175, 'square', 0.002, 0.11, 0.34);
       break;
     case 'check':
-      tone(1180, 'sine', 0.004, 0.28, 0.5);
-      tone(1760, 'sine', 0.004, 0.34, 0.32, undefined, 0.06);
+      // alert check — rising two-note ping
+      tone(1046, 'sine', 0.004, 0.22, 0.5);
+      tone(1568, 'sine', 0.004, 0.34, 0.4, undefined, 0.075);
       break;
     case 'castle':
       noiseBurst(0.002, 0.08, 0.6, 750, 0, 1.5);
@@ -109,4 +114,10 @@ export function playSound(name: SoundName) {
       tone(174, 'sawtooth', 0.004, 0.34, 0.28, undefined, 0.1);
       break;
   }
+}
+
+/* Call on first user gesture (menu tap, move, etc.) to create/resume the
+   AudioContext ahead of time — removes any first-sound latency. */
+export function primeAudio() {
+  ac();
 }
