@@ -4,7 +4,7 @@
 import { Chess } from 'chess.js';
 import { bootEngine, evaluatePosition, engineReady } from './index';
 import { isBookMove } from '../data/openings';
-import { mateToCp, cpToWinPercent } from '../storage';
+import { cpToWinPercent } from '../storage';
 import { COACH_LINES } from '../data/bots';
 
 export type MoveClass =
@@ -206,7 +206,7 @@ export async function analyzeGamePgn(pgn: string, options: ReviewOptions = {}): 
   const bestMoves: Array<string | null> = [];
   const secondPvs: Array<number | undefined> = [];
   for (let i = 0; i < fens.length; i++) {
-    const r = await evaluatePosition(fens[i], depth, i < fens.length - 1 ? 1 : 1);
+    const r = await evaluatePosition(fens[i], depth, 2);
     const cp = r.mate !== undefined ? (r.mate > 0 ? 100000 - Math.abs(r.mate) * 100 : -100000 + Math.abs(r.mate) * 100) : r.cp;
     evals.push(Math.max(-30000, Math.min(30000, cp)));
     mates.push(r.mate);

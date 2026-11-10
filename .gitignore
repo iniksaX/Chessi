@@ -37,3 +37,8 @@ google-services.json
 # Chessi web build artifacts
 app/node_modules/
 app/dist/
+
+# Chessi APK build staging output
+android/.build/
+android/assets/
+android/classes.dex
